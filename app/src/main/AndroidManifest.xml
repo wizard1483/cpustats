@@ -19,11 +19,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".ConfigActivity"
-            android:label="@string/title_activity_config">
-        </activity>
+            android:label="@string/title_activity_config" />
+        <activity
+            android:name=".AboutActivity"
+            android:label="@string/title_activity_about" />
 
         <service android:enabled="true" android:exported="false" android:name=".UsageUpdateService">
             <intent-filter>

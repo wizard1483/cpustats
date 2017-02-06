@@ -1,5 +1,6 @@
 package jp.takke.cpustats;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -23,14 +24,16 @@ public class PreviewActivity extends Activity {
     private boolean mIsForeground = false;
     
     // CPUクロック周波数(最小、最大)の文字列キャッシュ
+    @SuppressWarnings("FieldCanBeLocal")
     private int mMinFreq = 0;
     private String mMinFreqText = "";
+    @SuppressWarnings("FieldCanBeLocal")
     private int mMaxFreq = 0;
     private String mMaxFreqText = "";
 
     // 設定画面
     private final static int REQUEST_CONFIG_ACTIVITY = 0;
-    
+
     // サービス実行フラグ(メニュー切り替え用。コールバックがあれば実行中と判定する)
     private boolean mServiceMaybeRunning = false;
     
@@ -93,7 +96,7 @@ public class PreviewActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_preview);
         
-        MyLog.debugMode = false;
+//        MyLog.debugMode = true;
         MyLog.d("PreviewActivity.onCreate");
         
         // とりあえず全消去
@@ -131,24 +134,18 @@ public class PreviewActivity extends Activity {
     }
 
     private void hideAllCoreFreqInfo() {
-        
+
         // Core
-        final int[] imageViews = new int[]{R.id.core1Image, R.id.core2Image, R.id.core3Image, R.id.core4Image};
-        final int[] titleViews = new int[]{R.id.core1Title, R.id.core2Title, R.id.core3Title, R.id.core4Title};
-        final int[] textViews = new int[]{R.id.core1Text, R.id.core2Text, R.id.core3Text, R.id.core4Text};
-        
-        for (int i=0; i<4; i++) {
-            findViewById(imageViews[i]).setVisibility(View.GONE);
-            findViewById(titleViews[i]).setVisibility(View.GONE);
-            findViewById(textViews[i]).setVisibility(View.GONE);
+        final int[] cores = new int[]{R.id.core1, R.id.core2, R.id.core3, R.id.core4, R.id.core5, R.id.core6, R.id.core7, R.id.core8};
+        for (int i=0; i<8; i++) {
+            findViewById(cores[i]).setVisibility(View.GONE);
+
         }
-        
+
         // Freq
         findViewById(R.id.freqImage).setVisibility(View.GONE);
         findViewById(R.id.freqText1).setVisibility(View.GONE);
         findViewById(R.id.freqText2).setVisibility(View.GONE);
-        findViewById(R.id.freqText3).setVisibility(View.GONE);
-        findViewById(R.id.freqTitle).setVisibility(View.GONE);
     }
 
     @Override
@@ -186,6 +183,7 @@ public class PreviewActivity extends Activity {
         case R.id.menu_start_service:
             // サービス開始
             if (mServiceIf != null) {
+                MyLog.i("PreviewActivity: start");
                 try {
                     // 常駐開始
                     mServiceIf.startResident();
@@ -198,6 +196,7 @@ public class PreviewActivity extends Activity {
         case R.id.menu_stop_service:
             // サービス停止
             if (mServiceIf != null) {
+                MyLog.i("PreviewActivity: stop");
                 try {
                     // 常駐停止
                     mServiceIf.stopResident();
@@ -226,7 +225,11 @@ public class PreviewActivity extends Activity {
                 startActivityForResult(intent, REQUEST_CONFIG_ACTIVITY);
             }
             break;
-            
+
+        case R.id.menu_about:
+            startActivity(new Intent(this, AboutActivity.class));
+            break;
+
         case R.id.menu_exut:
             // 終了
             finish();
@@ -307,12 +310,11 @@ public class PreviewActivity extends Activity {
     
     /**
      * CPU 使用率を画面に表示する
-     * 
-     * @param cpuUsages
      */
+    @SuppressLint("SetTextI18n")
     private void updateCpuUsages(int[] cpuUsages) {
         
-        MyLog.d("updateCpuUsages");
+//        MyLog.d("PreviewActivity.updateCpuUsages");
         
         // アクションバーのアイコン変更
         if (cpuUsages != null && cpuUsages.length >= 1) {
@@ -321,32 +323,30 @@ public class PreviewActivity extends Activity {
         }
         
         // プレビュー画面に表示
-        final int[] imageViews = new int[]{R.id.core1Image, R.id.core2Image, R.id.core3Image, R.id.core4Image};
-        final int[] titleViews = new int[]{R.id.core1Title, R.id.core2Title, R.id.core3Title, R.id.core4Title};
-        final int[] textViews = new int[]{R.id.core1Text, R.id.core2Text, R.id.core3Text, R.id.core4Text};
-        
+        final int[] cores = new int[]{R.id.core1, R.id.core2, R.id.core3, R.id.core4, R.id.core5, R.id.core6, R.id.core7, R.id.core8};
+
         final int coreCount = MyUtil.calcCpuCoreCount();
-        for (int i=0; i<4; i++) {
+        for (int i=0; i<8; i++) {
             
             if (coreCount <= i) {
                 // Coreが少ないので消去
-                findViewById(imageViews[i]).setVisibility(View.GONE);
-                findViewById(titleViews[i]).setVisibility(View.GONE);
-                findViewById(textViews[i]).setVisibility(View.GONE);
+                findViewById(cores[i]).setVisibility(View.GONE);
             } else {
+                final View coreView = findViewById(cores[i]);
+                coreView.setVisibility(View.VISIBLE);
+
                 int cpuUsage = 0;
                 if (cpuUsages != null && cpuUsages.length > i+1) {
                     cpuUsage = cpuUsages[i+1];
                 }
 
-                final TextView textView = (TextView) findViewById(textViews[i]);
-                textView.setText("CPU Usage: " + cpuUsage + "%");
+
+                final TextView textView = (TextView) coreView.findViewById(R.id.coreText);
+                textView.setText("Core" + (i+1) + ": " + cpuUsage + "%");
                 textView.setVisibility(View.VISIBLE);
-                
-                findViewById(titleViews[i]).setVisibility(View.VISIBLE);
-                
+
                 final int id = ResourceUtil.getIconIdForCpuUsageSingle(cpuUsage);
-                final ImageView imageView = (ImageView) findViewById(imageViews[i]);
+                final ImageView imageView = (ImageView) coreView.findViewById(R.id.coreImage);
                 imageView.setImageResource(id);
                 imageView.setVisibility(View.VISIBLE);
             }
@@ -355,27 +355,19 @@ public class PreviewActivity extends Activity {
 
     /**
      * CPU クロック周波数を画面に表示する
-     * 
-     * @param currentFreq
      */
     private void updateCpuFrequency(final int currentFreq) {
         
-        MyLog.d("updateCpuFrequency");
+//        MyLog.d("PreviewActivity.updateCpuFrequency");
         
         final TextView textView1 = (TextView) findViewById(R.id.freqText1);
         textView1.setText("Freq: " + MyUtil.formatFreq(currentFreq));
         textView1.setVisibility(View.VISIBLE);
         
         final TextView textView2 = (TextView) findViewById(R.id.freqText2);
-        textView2.setText("Max: " + mMaxFreqText);
+        textView2.setText("(" + mMinFreqText + " - " + mMaxFreqText + ")");
         textView2.setVisibility(View.VISIBLE);
-        
-        final TextView textView3 = (TextView) findViewById(R.id.freqText3);
-        textView3.setText("Min: " + mMinFreqText);
-        textView3.setVisibility(View.VISIBLE);
-        
-        findViewById(R.id.freqTitle).setVisibility(View.VISIBLE);
-        
+
 //      final int clockPercent = mMaxFreq >= 0 ? ((currentFreq - mMinFreq) * 100 / (mMaxFreq - mMinFreq)) : 0;
 //      MyLog.i(" clock[" + currentFreq + "] => " + clockPercent + "%");
         
